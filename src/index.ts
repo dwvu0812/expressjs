@@ -1,22 +1,26 @@
-// app.ts
-import express, { Express } from 'express'
-import loggerMiddleware from './middleware/logger'
-import indexRoutes from './routes/index'
-import userRoutes from './routes/users'
-import databaseService from './services/database.service'
+import express, { Express } from 'express';
+import { databaseService } from './config/database';
 
-const app: Express = express()
+const app: Express = express();
+const port = process.env.PORT || 3000;
 
-// Sử dụng middleware
-app.use(loggerMiddleware)
+async function startServer() {
+  try {
+    const db = await databaseService.connect();
 
-// Sử dụng các route
-app.use('/', indexRoutes)
-app.use('/api/users', userRoutes)
+    app.listen(port, () => {
+      console.log(`Server is running on port ${port}`);
+    });
 
-databaseService.connect().catch(console.dir)
+    // Graceful shutdown
+    process.on('SIGINT', async () => {
+      await databaseService.close();
+      process.exit(0);
+    });
+  } catch (error) {
+    console.error('Failed to start the server:', error);
+    process.exit(1);
+  }
+}
 
-// Khởi chạy server
-app.listen(3000, () => {
-  console.log('Server is running on port 3000')
-})
+startServer();

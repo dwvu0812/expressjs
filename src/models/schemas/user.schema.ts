@@ -7,7 +7,7 @@ enum UserVerifyStatus {
 }
 
 interface IUser {
-  _id: ObjectId;
+  readonly _id: ObjectId;
   name: string;
   email: string;
   password: string;
@@ -26,7 +26,7 @@ interface IUser {
 }
 
 class User implements IUser {
-  _id: ObjectId;
+  readonly _id: ObjectId;
   name: string;
   email: string;
   password: string;
@@ -43,38 +43,26 @@ class User implements IUser {
   avatar?: string;
   cover_photo?: string;
 
-  constructor(
-    _id: ObjectId,
-    name: string,
-    email: string,
-    password: string,
-    username: string,
-    verify: UserVerifyStatus = UserVerifyStatus.Unverified
-  ) {
-    this._id = _id;
-    this.name = name;
-    this.email = email;
-    this.password = password;
-    this.username = username;
-    this.verify = verify;
-    this.created_at = new Date();
-    this.updated_at = new Date();
+  constructor(user: Partial<IUser>) {
+    this._id = user._id || new ObjectId();
+    this.name = user.name || '';
+    this.email = user.email || '';
+    this.password = user.password || '';
+    this.username = user.username || '';
+    this.created_at = user.created_at || new Date();
+    this.updated_at = user.updated_at || new Date();
+    this.verify = user.verify || UserVerifyStatus.Unverified;
+    this.date_of_birth = user.date_of_birth;
+    this.email_verify_token = user.email_verify_token;
+    this.forgot_password_token = user.forgot_password_token;
+    this.bio = user.bio;
+    this.location = user.location;
+    this.website = user.website;
+    this.avatar = user.avatar;
+    this.cover_photo = user.cover_photo;
   }
 
-  updateUsername(newUsername: string): void {
-    this.username = newUsername;
-    this.updated_at = new Date();
-  }
 
-  updateEmail(newEmail: string): void {
-    this.email = newEmail;
-    this.updated_at = new Date();
-  }
-
-  updateVerifyStatus(newStatus: UserVerifyStatus): void {
-    this.verify = newStatus;
-    this.updated_at = new Date();
-  }
 }
 
 export { IUser, User, UserVerifyStatus };

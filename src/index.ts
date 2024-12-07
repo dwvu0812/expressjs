@@ -12,7 +12,7 @@ app.use(bodyParser.json());
 
 databaseService.connect()
 
-app.use('/api', userRoutes)
+app.use('/api/users', userRoutes)
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

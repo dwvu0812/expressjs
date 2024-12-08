@@ -1,10 +1,5 @@
 import { ObjectId } from 'mongodb';
-
-enum UserVerifyStatus {
-  Unverified,
-  Verified,
-  Banned
-}
+import { UserVerifyStatus } from '~/constants/enums';
 
 interface IUser {
   readonly _id: ObjectId;
@@ -61,8 +56,6 @@ class User implements IUser {
     this.avatar = user.avatar;
     this.cover_photo = user.cover_photo;
   }
-
-
 }
 
 export { IUser, User, UserVerifyStatus };

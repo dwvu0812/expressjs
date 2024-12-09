@@ -1,18 +1,19 @@
 import { NextFunction, Request, Response } from 'express';
 import { HTTP_STATUS } from '~/constants/httpStatus';
+import { COMMON_MESSAGES } from '~/constants/messages';
 import { verifyToken } from '~/utils/jwt';
 
 export const verifyAccessToken = async (req: Request, res: Response, next: NextFunction) => {
   const accessToken = req.headers.authorization;
   if (!accessToken) {
     return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-      message: 'Unauthorized'
+      message: COMMON_MESSAGES.ACCESS_TOKEN_IS_REQUIRED
     });
   }
   const token = accessToken.split(' ')[1];
   if (!token) {
     return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-      message: 'Access token is required'
+      message: COMMON_MESSAGES.ACCESS_TOKEN_IS_REQUIRED
     });
   }
 
@@ -25,7 +26,7 @@ export const verifyAccessToken = async (req: Request, res: Response, next: NextF
     next();
   } catch (error) {
     return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-      message: 'Invalid access token'
+      message: COMMON_MESSAGES.INVALID_ACCESS_TOKEN
     });
   }
 };

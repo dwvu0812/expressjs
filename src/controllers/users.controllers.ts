@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { HTTP_STATUS } from '~/constants/httpStatus';
+import { USERS_MESSAGES } from '~/constants/messages';
 import { UserVerifyStatus } from '~/models/schemas/User.schema';
 import refreshTokenService from '~/services/refreshToken.services';
 import usersService from '~/services/users.services';
@@ -13,7 +14,7 @@ export const loginController = async (req: Request, res: Response) => {
 
     if (!user) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
-        message: 'User not found'
+        message: USERS_MESSAGES.EMAIL_OR_PASSWORD_IS_INCORRECT
       });
     }
 
@@ -21,7 +22,7 @@ export const loginController = async (req: Request, res: Response) => {
 
     if (!isValidPassword) {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-        message: 'Invalid password'
+        message: USERS_MESSAGES.EMAIL_OR_PASSWORD_IS_INCORRECT
       });
     }
     const accessToken = await generateAccessToken(user._id.toString());
@@ -30,14 +31,14 @@ export const loginController = async (req: Request, res: Response) => {
     await refreshTokenService.createRefreshToken(user._id.toString(), refreshToken);
 
     return res.status(HTTP_STATUS.OK).json({
-      message: 'Login success',
+      message: USERS_MESSAGES.LOGIN_SUCCESS,
       accessToken,
       refreshToken
     });
   } catch (error) {
     console.error('Error logging in:', error);
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-      message: 'Login failed',
+      message: USERS_MESSAGES.LOGIN_FAILED,
       error
     });
   }
@@ -51,7 +52,7 @@ export const registerController = async (req: Request, res: Response) => {
 
     if (existingEmail) {
       return res.status(HTTP_STATUS.CONFLICT).json({
-        message: 'Email already exists'
+        message: USERS_MESSAGES.EMAIL_ALREADY_EXISTS
       });
     }
 
@@ -65,7 +66,7 @@ export const registerController = async (req: Request, res: Response) => {
     });
 
     return res.status(HTTP_STATUS.CREATED).json({
-      message: 'User created successfully',
+      message: USERS_MESSAGES.REGISTER_SUCCESS,
       data: {
         user: {
           email: user.email,
@@ -77,7 +78,7 @@ export const registerController = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error creating user:', error);
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-      message: 'Registration failed',
+      message: USERS_MESSAGES.REGISTER_FAILED,
       error
     });
   }

@@ -1,80 +1,81 @@
-import { NextFunction, Request, Response } from "express";
-import { checkSchema } from "express-validator";
+import { NextFunction, Request, Response } from 'express';
+import { checkSchema } from 'express-validator';
+import { USERS_MESSAGES } from '~/constants/messages';
 
 export const loginValidator = (req: Request, res: Response, next: NextFunction) => {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
-    if (!email || !password) {
-        return res.status(400).send('Email and password are required');
-    }
+  if (!email || !password) {
+    return res.status(400).send(USERS_MESSAGES.VALIDATION_ERROR.EMAIL_AND_PASSWORD_ARE_REQUIRED);
+  }
 
-    next()
-}
+  next();
+};
 
 export const registerValidator = checkSchema({
-    email: {
-        isEmail: {
-            errorMessage: 'Invalid email format'
-        },
-        trim: true,
-        normalizeEmail: true,
-        custom: {
-            options: (value) => {
-                if (!value) {
-                    throw new Error('Email is required');
-                }
-                return true;
-            }
+  email: {
+    isEmail: {
+      errorMessage: USERS_MESSAGES.VALIDATION_ERROR.EMAIL_IS_INVALID
+    },
+    trim: true,
+    normalizeEmail: true,
+    custom: {
+      options: (value) => {
+        if (!value) {
+          throw new Error(USERS_MESSAGES.VALIDATION_ERROR.EMAIL_IS_REQUIRED);
         }
-    },
-    password: {
-        isLength: {
-            errorMessage: 'Password must be 6-50 characters',
-            options: { min: 6, max: 50 }
-        },
-        custom: {
-            options: (value) => {
-                if (!value) {
-                    throw new Error('Password is required');
-                }
-                return true;
-            }
-        }
-    },
-    confirm_password: {
-        custom: {
-            options: (value, { req }) => {
-                if (!value) {
-                    throw new Error('Confirm password is required');
-                }
-                if (value !== req.body.password) {
-                    throw new Error('Passwords do not match');
-                }
-                return true;
-            }
-        }
-    },
-    name: {
-        isLength: {
-            errorMessage: 'Name must be 3-50 characters',
-            options: { min: 3, max: 50 }
-        },
-        isString: {
-            errorMessage: 'Name must be a string'
-        },
-        trim: true,
-        escape: true
-    },
-    username: {
-        isLength: {
-            errorMessage: 'Username must be 3-30 characters',
-            options: { min: 3, max: 30 }
-        },
-        matches: {
-            options: /^[a-zA-Z0-9_]+$/,
-            errorMessage: 'Username can only contain letters, numbers and underscore'
-        },
-        trim: true,
-        escape: true
+        return true;
+      }
     }
-})
+  },
+  password: {
+    isLength: {
+      errorMessage: USERS_MESSAGES.VALIDATION_ERROR.PASSWORD_LENGTH_MUST_BE_FROM_6_TO_50,
+      options: { min: 6, max: 50 }
+    },
+    custom: {
+      options: (value) => {
+        if (!value) {
+          throw new Error(USERS_MESSAGES.VALIDATION_ERROR.PASSWORD_IS_REQUIRED);
+        }
+        return true;
+      }
+    }
+  },
+  confirm_password: {
+    custom: {
+      options: (value, { req }) => {
+        if (!value) {
+          throw new Error(USERS_MESSAGES.VALIDATION_ERROR.CONFIRM_PASSWORD_IS_REQUIRED);
+        }
+        if (value !== req.body.password) {
+          throw new Error(USERS_MESSAGES.VALIDATION_ERROR.CONFIRM_PASSWORD_MUST_BE_THE_SAME_AS_PASSWORD);
+        }
+        return true;
+      }
+    }
+  },
+  name: {
+    isLength: {
+      errorMessage: USERS_MESSAGES.VALIDATION_ERROR.NAME_LENGTH_MUST_BE_FROM_3_TO_50,
+      options: { min: 3, max: 50 }
+    },
+    isString: {
+      errorMessage: USERS_MESSAGES.VALIDATION_ERROR.NAME_MUST_BE_STRING
+    },
+    trim: true,
+    escape: true
+  },
+  username: {
+    isLength: {
+      errorMessage: USERS_MESSAGES.VALIDATION_ERROR.USERNAME_LENGTH_MUST_BE_FROM_3_TO_30,
+      options: { min: 3, max: 30 }
+    },
+    matches: {
+      options: /^[a-zA-Z0-9_]+$/,
+      errorMessage: USERS_MESSAGES.VALIDATION_ERROR.USERNAME_INVALID
+    },
+    trim: true,
+    escape: true
+  }
+});

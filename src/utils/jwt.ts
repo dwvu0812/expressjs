@@ -1,17 +1,12 @@
 import jwt from 'jsonwebtoken';
 import { TokenType } from '~/constants/enums';
 
-export interface ITokenPayload {
-  user_id: string;
-  token_type: TokenType;
-}
-
 export const signToken = ({
   payload,
   privateKey,
   options = { algorithm: 'HS256' }
 }: {
-  payload: ITokenPayload;
+  payload: jwt.JwtPayload;
   privateKey: string;
   options: jwt.SignOptions;
 }) => {
@@ -24,10 +19,10 @@ export const signToken = ({
 };
 
 export const verifyToken = ({ token, secretKey }: { token: string; secretKey: string }) => {
-  return new Promise<ITokenPayload>((resolve, reject) => {
+  return new Promise<jwt.JwtPayload>((resolve, reject) => {
     jwt.verify(token, secretKey, (error, decoded) => {
       if (error) return reject(error);
-      resolve(decoded as ITokenPayload);
+      resolve(decoded as jwt.JwtPayload);
     });
   });
 };
@@ -45,7 +40,7 @@ export const generateAccessToken = async (user_id: string) => {
   });
 };
 
-export const generateRefreshToken = async (user_id: string) => {
+export const generateRefreshToken = async (user_id: string, expiresIn?: string) => {
   return signToken({
     payload: {
       user_id,
@@ -53,7 +48,7 @@ export const generateRefreshToken = async (user_id: string) => {
     },
     privateKey: process.env.JWT_SECRET_KEY as string,
     options: {
-      expiresIn: process.env.JWT_EXPIRES_IN_REFRESH_TOKEN || '7d'
+      expiresIn: expiresIn || process.env.JWT_EXPIRES_IN_REFRESH_TOKEN || '7d'
     }
   });
 };

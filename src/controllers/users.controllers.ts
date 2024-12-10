@@ -5,7 +5,8 @@ import { UserVerifyStatus } from '~/models/schemas/User.schema';
 import refreshTokenService from '~/services/refreshToken.services';
 import usersService from '~/services/users.services';
 import { comparePassword, hashPassword } from '~/utils/crypto';
-import { generateAccessToken, generateRefreshToken } from '~/utils/jwt';
+import { generateAccessToken, generateRefreshToken, verifyToken } from '~/utils/jwt';
+import jwt from 'jsonwebtoken';
 
 export const loginController = async (req: Request, res: Response) => {
   const { email, password } = req.body;
@@ -80,6 +81,85 @@ export const registerController = async (req: Request, res: Response) => {
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       message: USERS_MESSAGES.REGISTER_FAILED,
       error
+    });
+  }
+};
+
+export const refreshTokenController = async (req: Request, res: Response) => {
+  const { refresh_token } = req.body;
+
+  if (!refresh_token) {
+    return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+      message: USERS_MESSAGES.REFRESH_TOKEN_IS_REQUIRED
+    });
+  }
+
+  try {
+    // verify refresh token
+    const decoded = await verifyToken({
+      token: refresh_token,
+      secretKey: process.env.JWT_SECRET_KEY as string
+    });
+
+    // check if refresh token is used
+    const refresh_token_used = await refreshTokenService.findRefreshToken(refresh_token);
+    if (!refresh_token_used) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+        message: USERS_MESSAGES.USED_REFRESH_TOKEN_OR_NOT_EXIST
+      });
+    }
+
+    const remainingTime = Math.floor(((decoded.exp as number) * 1000 - Date.now()) / 1000);
+
+    // generate new token
+    const user_id = decoded.user_id;
+    const [new_access_token, new_refresh_token] = await Promise.all([
+      generateAccessToken(user_id),
+      generateRefreshToken(user_id, `${remainingTime}s`)
+    ]);
+
+    await Promise.all([
+      refreshTokenService.deleteRefreshToken(refresh_token),
+      refreshTokenService.createRefreshToken(user_id, new_refresh_token)
+    ]);
+
+    return res.status(HTTP_STATUS.OK).json({
+      message: USERS_MESSAGES.REFRESH_TOKEN_SUCCESS,
+      accessToken: new_access_token,
+      refreshToken: new_refresh_token
+    });
+  } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+        message: USERS_MESSAGES.REFRESH_TOKEN_EXPIRED
+      });
+    }
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: USERS_MESSAGES.REFRESH_TOKEN_FAILED,
+      error
+    });
+  }
+};
+
+export const logoutController = async (req: Request, res: Response) => {
+  const { refresh_token } = req.body;
+
+  if (!refresh_token) {
+    return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+      message: USERS_MESSAGES.REFRESH_TOKEN_IS_REQUIRED
+    });
+  }
+
+  try {
+    // Delete refresh token from database
+    await refreshTokenService.deleteRefreshToken(refresh_token);
+
+    return res.json({
+      message: USERS_MESSAGES.LOGOUT_SUCCESS
+    });
+  } catch (error) {
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: USERS_MESSAGES.LOGOUT_FAILED
     });
   }
 };

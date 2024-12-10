@@ -34,5 +34,9 @@ export const USERS_MESSAGES = {
   USED_REFRESH_TOKEN_OR_NOT_EXIST: 'Used refresh token or not exist',
   LOGOUT_SUCCESS: 'Logout success',
   LOGIN_FAILED: 'Login failed',
-  REGISTER_FAILED: 'Registration failed'
+  REGISTER_FAILED: 'Registration failed',
+  REFRESH_TOKEN_SUCCESS: 'Refresh token success',
+  REFRESH_TOKEN_EXPIRED: 'Refresh token expired',
+  REFRESH_TOKEN_FAILED: 'Refresh token failed',
+  LOGOUT_FAILED: 'Logout failed'
 } as const;

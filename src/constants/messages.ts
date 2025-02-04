@@ -38,5 +38,14 @@ export const USERS_MESSAGES = {
   REFRESH_TOKEN_SUCCESS: 'Refresh token success',
   REFRESH_TOKEN_EXPIRED: 'Refresh token expired',
   REFRESH_TOKEN_FAILED: 'Refresh token failed',
-  LOGOUT_FAILED: 'Logout failed'
+  LOGOUT_FAILED: 'Logout failed',
+  VERIFICATION_TOKEN_IS_REQUIRED: 'Verification token is required',
+  INVALID_VERIFICATION_TOKEN: 'Invalid verification token',
+  USER_NOT_FOUND: 'User not found',
+  EMAIL_ALREADY_VERIFIED: 'Email is already verified',
+  EMAIL_VERIFY_SUCCESS: 'Email verified successfully',
+  EMAIL_VERIFY_FAILED: 'Failed to verify email',
+  VERIFICATION_TOKEN_EXPIRED: 'Verification token has expired',
+  RESEND_VERIFY_EMAIL_SUCCESS: 'Verification email sent successfully',
+  RESEND_VERIFY_EMAIL_FAILED: 'Failed to send verification email'
 } as const;

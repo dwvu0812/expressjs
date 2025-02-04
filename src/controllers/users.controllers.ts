@@ -5,8 +5,10 @@ import { UserVerifyStatus } from '~/models/schemas/User.schema';
 import refreshTokenService from '~/services/refreshToken.services';
 import usersService from '~/services/users.services';
 import { comparePassword, hashPassword } from '~/utils/crypto';
-import { generateAccessToken, generateRefreshToken, verifyToken } from '~/utils/jwt';
+import { generateAccessToken, generateRefreshToken, verifyToken, generateEmailVerificationToken } from '~/utils/jwt';
 import jwt from 'jsonwebtoken';
+import { EmailService } from '~/services/email.services';
+import { TokenType } from '~/constants/enums';
 
 export const loginController = async (req: Request, res: Response) => {
   const { email, password } = req.body;
@@ -66,6 +68,10 @@ export const registerController = async (req: Request, res: Response) => {
       verify: UserVerifyStatus.Unverified
     });
 
+    // Generate and send verification email
+    const verificationToken = await generateEmailVerificationToken(user._id.toString());
+    await EmailService.sendVerificationEmail(email, verificationToken);
+
     return res.status(HTTP_STATUS.CREATED).json({
       message: USERS_MESSAGES.REGISTER_SUCCESS,
       data: {
@@ -80,6 +86,97 @@ export const registerController = async (req: Request, res: Response) => {
     console.error('Error creating user:', error);
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       message: USERS_MESSAGES.REGISTER_FAILED,
+      error
+    });
+  }
+};
+
+export const verifyEmailController = async (req: Request, res: Response) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
+      message: USERS_MESSAGES.VERIFICATION_TOKEN_IS_REQUIRED
+    });
+  }
+
+  try {
+    const decoded = await verifyToken({
+      token,
+      secretKey: process.env.JWT_SECRET_KEY as string
+    });
+
+    if (decoded.type !== TokenType.EmailVerifyToken) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        message: USERS_MESSAGES.INVALID_VERIFICATION_TOKEN
+      });
+    }
+
+    const user = await usersService.findUserById(decoded.user_id);
+
+    if (!user) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
+        message: USERS_MESSAGES.USER_NOT_FOUND
+      });
+    }
+
+    if (user.verify === UserVerifyStatus.Verified) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        message: USERS_MESSAGES.EMAIL_ALREADY_VERIFIED
+      });
+    }
+
+    await usersService.updateVerificationStatus(user._id.toString(), UserVerifyStatus.Verified);
+
+    return res.status(HTTP_STATUS.OK).json({
+      message: USERS_MESSAGES.EMAIL_VERIFY_SUCCESS
+    });
+  } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+        message: USERS_MESSAGES.VERIFICATION_TOKEN_EXPIRED
+      });
+    }
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: USERS_MESSAGES.EMAIL_VERIFY_FAILED,
+      error
+    });
+  }
+};
+
+export const resendVerificationEmailController = async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
+      message: USERS_MESSAGES.VALIDATION_ERROR.EMAIL_IS_REQUIRED
+    });
+  }
+
+  try {
+    const user = await usersService.findUserByEmail(email);
+
+    if (!user) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
+        message: USERS_MESSAGES.USER_NOT_FOUND
+      });
+    }
+
+    if (user.verify === UserVerifyStatus.Verified) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        message: USERS_MESSAGES.EMAIL_ALREADY_VERIFIED
+      });
+    }
+
+    const verificationToken = await generateEmailVerificationToken(user._id.toString());
+    await EmailService.sendVerificationEmail(email, verificationToken);
+
+    return res.status(HTTP_STATUS.OK).json({
+      message: USERS_MESSAGES.RESEND_VERIFY_EMAIL_SUCCESS
+    });
+  } catch (error) {
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: USERS_MESSAGES.RESEND_VERIFY_EMAIL_FAILED,
       error
     });
   }

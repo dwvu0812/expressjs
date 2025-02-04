@@ -52,3 +52,9 @@ export const generateRefreshToken = async (user_id: string, expiresIn?: string) 
     }
   });
 };
+
+export const generateEmailVerificationToken = async (user_id: string) => {
+  return jwt.sign({ user_id, type: TokenType.EmailVerifyToken }, process.env.JWT_SECRET_KEY as string, {
+    expiresIn: process.env.JWT_EXPIRES_IN_EMAIL_VERIFY_TOKEN
+  });
+};
